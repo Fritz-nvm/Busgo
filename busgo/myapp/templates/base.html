@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusGo Cameroon - Premium Bus Booking</title>
+   
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets\fontawesome-free\css\all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets\bootstrap\css\bootstrap.min.css' %}">
+    <link href="{% static 'assets\css\style.css' %}" rel="stylesheet">
+</head>
+<body>
+       <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+                <i class="fas fa-bus text-primary me-2"></i>
+                <span class="text-primary">Bus</span><span class="text-secondary">Go</span>
+                <small class="text-muted ms-1">Cameroon</small>
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'bus_listing' %}">Find Buses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex gap-2">
+                    {% if user.is_authenticated %}
+                        <span class="navbar-text me-2">Welcome, {{ user.first_name|default:user.username }}!</span>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-primary">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">Login</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+   {% block content %}
+   
+
+   {% endblock content %}
+
+     <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-bus text-primary me-2"></i>
+                        <span class="text-primary">Bus</span><span class="text-secondary">Go</span>
+                        <small class="text-muted ms-1">Cameroon</small>
+                    </h5>
+                    <p class="text-muted">Your trusted partner for comfortable and safe bus travel across Cameroon.</p>
+                    <div class="social-links">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-2">
+                    <h6 class="fw-bold mb-3">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'home' %}" class="text-muted text-decoration-none">Home</a></li>
+                        <li><a href="{% url 'bus_listing' %}" class="text-muted text-decoration-none">Find Buses</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">About Us</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2">
+                    <h6 class="fw-bold mb-3">Support</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-muted text-decoration-none">Help Center</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Terms of Service</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Privacy Policy</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">Refund Policy</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-4">
+                    <h6 class="fw-bold mb-3">Contact Info</h6>
+                    <div class="contact-info">
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-phone text-primary me-2"></i>
+                            +237 6XX XXX XXX
+                        </p>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            support@busgo.cm
+                        </p>
+                        <p class="text-muted">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                            Bonanjo Quarter, Douala, Cameroon
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="text-muted mb-0">&copy; 2024 BusGo Cameroon. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted mb-0">Made with <i class="fas fa-heart text-danger"></i> for travelers</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Set minimum date to today
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.querySelector('input[type="date"]');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        });
+
+    </script>
+
+ 
+
+    <script src="{% static 'assets\bootstrap\js\bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/js/main.js' %}"></script>
+    {% block js %}
+    
+    {% endblock js %}
+</body>
+</html>

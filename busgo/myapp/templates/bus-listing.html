@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<br><br>
+   <!-- Search Header -->
+    <section class="search-header bg-primary text-white py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="search-info">
+                        <h4 class="mb-2">{{ search_params.from_city|default:"Douala" }} → {{ search_params.to_city|default:"Bamenda" }}</h4>
+                        <p class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>{{ search_params.travel_date|date:"F d, Y"|default:"Today" }}
+                            <span class="mx-3">|</span>
+                            <i class="fas fa-users me-2"></i>{{ search_params.passengers|default:"1" }} Passenger{{ search_params.passengers|pluralize }}
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#modifySearchModal">
+                        <i class="fas fa-edit me-2"></i>Modify Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="py-4">
+        <div class="container">
+            <div class="row">
+                <!-- Filters Sidebar -->
+                <div class="col-lg-3 mb-4">
+                    <div class="filters-card bg-white rounded-4 shadow-sm p-4 sticky-top">
+                        <h5 class="fw-bold mb-4">Filters</h5>
+                        
+                        <form method="GET" action="{% url 'bus_listing' %}">
+                            <!-- Preserve search parameters -->
+                            <input type="hidden" name="from_city" value="{{ search_params.from_city }}">
+                            <input type="hidden" name="to_city" value="{{ search_params.to_city }}">
+                            <input type="hidden" name="travel_date" value="{{ search_params.travel_date }}">
+                            
+                            <!-- Departure Time -->
+                            <div class="filter-section mb-4">
+                                <h6 class="fw-semibold mb-3">Departure Time</h6>
+                                <div class="time-filters">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="time_filter" value="morning" id="morning"
+                                               {% if 'morning' in request.GET.time_filter %}checked{% endif %}>
+                                        <label class="form-check-label" for="morning">
+                                            <i class="fas fa-sun text-warning me-2"></i>Morning (6AM - 6PM)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="time_filter" value="night" id="night"
+                                               {% if 'night' in request.GET.time_filter %}checked{% endif %}>
+                                        <label class="form-check-label" for="night">
+                                            <i class="fas fa-moon text-dark me-2"></i>Night (6PM - 6AM)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Price Range -->
+                            <div class="filter-section mb-4">
+                                <h6 class="fw-semibold mb-3">Price Range</h6>
+                                <div class="price-range">
+                                    <select name="max_price" class="form-select">
+                                        <option value="">Any Price</option>
+                                        <option value="5000" {% if request.GET.max_price == '5000' %}selected{% endif %}>Up to 5,000 FCFA</option>
+                                        <option value="7500" {% if request.GET.max_price == '7500' %}selected{% endif %}>Up to 7,500 FCFA</option>
+                                        <option value="10000" {% if request.GET.max_price == '10000' %}selected{% endif %}>Up to 10,000 FCFA</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Bus Type -->
+                            <div class="filter-section mb-4">
+                                <h6 class="fw-semibold mb-3">Bus Type</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="bus_type" value="AC" id="ac"
+                                           {% if 'AC' in request.GET.bus_type %}checked{% endif %}>
+                                    <label class="form-check-label" for="ac">AC</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="bus_type" value="VIP" id="vip"
+                                           {% if 'VIP' in request.GET.bus_type %}checked{% endif %}>
+                                    <label class="form-check-label" for="vip">VIP</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="bus_type" value="Premium" id="premium"
+                                           {% if 'Premium' in request.GET.bus_type %}checked{% endif %}>
+                                    <label class="form-check-label" for="premium">Premium</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="bus_type" value="Economy" id="economy"
+                                           {% if 'Economy' in request.GET.bus_type %}checked{% endif %}>
+                                    <label class="form-check-label" for="economy">Economy</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Bus Listings -->
+                <div class="col-lg-9">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">Available Buses</h5>
+                            <p class="text-muted mb-0">{{ buses|length }} bus{{ buses|length|pluralize:"es" }} found for your route</p>
+                        </div>
+                        <div class="sort-dropdown">
+                            <form method="GET" action="{% url 'bus_listing' %}" class="d-inline">
+                                <!-- Preserve all current parameters -->
+                                {% for key, value in request.GET.items %}
+                                    {% if key != 'sort_by' %}
+                                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <select name="sort_by" class="form-select" onchange="this.form.submit()">
+                                    <option value="departure_time" {% if request.GET.sort_by == 'departure_time' %}selected{% endif %}>Sort by: Departure Time</option>
+                                    <option value="price_low" {% if request.GET.sort_by == 'price_low' %}selected{% endif %}>Sort by: Price (Low to High)</option>
+                                    <option value="price_high" {% if request.GET.sort_by == 'price_high' %}selected{% endif %}>Sort by: Price (High to Low)</option>
+                                    <option value="rating" {% if request.GET.sort_by == 'rating' %}selected{% endif %}>Sort by: Rating</option>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Bus Cards -->
+                    <div class="bus-listings">
+                        {% for bus in buses %}
+                        <div class="bus-card bg-white rounded-4 shadow-sm mb-4">
+                            <div class="bus-card-header p-4 border-bottom">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-8">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h5 class="fw-bold mb-0 me-3">{{ bus.operator_name }}</h5>
+                                            <span class="badge bg-primary me-1">{{ bus.bus_type }}</span>
+                                            {% if bus.has_wifi %}<span class="badge bg-info me-1">WiFi</span>{% endif %}
+                                            {% if bus.has_ac %}<span class="badge bg-success me-1">AC</span>{% endif %}
+                                        </div>
+                                        <p class="text-muted mb-0">{{ bus.bus_type }} Coach • {{ bus.total_seats }} Seats</p>
+                                    </div>
+                                    <div class="col-lg-4 text-lg-end">
+                                        <div class="rating mb-2">
+                                            <span class="text-warning">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= bus.rating %}
+                                                        <i class="fas fa-star"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                            <span class="text-muted ms-1">({{ bus.rating }})</span>
+                                        </div>
+                                        <p class="text-muted mb-0">{{ bus.reviews_count }} reviews</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bus-card-body p-4">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-6">
+                                        <div class="journey-info">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="time-info text-center me-4">
+                                                    <h4 class="fw-bold mb-0">{{ bus.departure_time|time:"H:i" }}</h4>
+                                                    <p class="text-muted mb-0">{{ search_params.from_city }}</p>
+                                                </div>
+                                                <div class="journey-line flex-grow-1 text-center">
+                                                    <div class="journey-duration">
+                                                        <span class="badge bg-light text-dark">{{ bus.duration }}</span>
+                                                    </div>
+                                                    <div class="journey-path">
+                                                        <div class="path-line"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="time-info text-center ms-4">
+                                                    <h4 class="fw-bold mb-0">{{ bus.arrival_time|time:"H:i" }}</h4>
+                                                    <p class="text-muted mb-0">{{ search_params.to_city }}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="amenities">
+                                                {% if bus.has_wifi %}
+                                                <span class="amenity-tag">
+                                                    <i class="fas fa-wifi"></i> WiFi
+                                                </span>
+                                                {% endif %}
+                                                {% if bus.has_ac %}
+                                                <span class="amenity-tag">
+                                                    <i class="fas fa-snowflake"></i> AC
+                                                </span>
+                                                {% endif %}
+                                                {% if bus.has_charging %}
+                                                <span class="amenity-tag">
+                                                    <i class="fas fa-charging-station"></i> Charging
+                                                </span>
+                                                {% endif %}
+                                                {% if bus.has_entertainment %}
+                                                <span class="amenity-tag">
+                                                    <i class="fas fa-tv"></i> Entertainment
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-lg-6">
+                                        <div class="booking-info text-lg-end">
+                                            <div class="price-info mb-3">
+                                                <h3 class="text-primary fw-bold mb-0">{{ bus.price|floatformat:0 }} FCFA</h3>
+                                                <p class="text-muted mb-0">per person</p>
+                                            </div>
+                                            
+                                            <div class="availability mb-3">
+                                                {% if bus.available_seats <= 5 %}
+                                                    <span class="text-warning fw-semibold">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                                        Only {{ bus.available_seats }} seats left
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-success fw-semibold">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        {{ bus.available_seats }} seats available
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="booking-actions">
+                                                <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#busDetailsModal{{ bus.id }}">
+                                                    View Details
+                                                </button>
+                                                <a href="{% url 'seat_selection' bus.id %}?from_city={{ search_params.from_city }}&to_city={{ search_params.to_city }}&travel_date={{ search_params.travel_date }}" 
+                                                   class="btn btn-primary">
+                                                    Select Seats
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bus Details Modal -->
+                        <div class="modal fade" id="busDetailsModal{{ bus.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ bus.operator_name }} - Bus Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="fw-bold">Bus Information</h6>
+                                                <p><strong>Bus Number:</strong> {{ bus.bus_number }}</p>
+                                                <p><strong>Type:</strong> {{ bus.bus_type }}</p>
+                                                <p><strong>Total Seats:</strong> {{ bus.total_seats }}</p>
+                                                <p><strong>Available:</strong> {{ bus.available_seats }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="fw-bold">Journey Details</h6>
+                                                <p><strong>Route:</strong> {{ search_params.from_city }} → {{ search_params.to_city }}</p>
+                                                <p><strong>Departure:</strong> {{ bus.departure_time|time:"H:i" }}</p>
+                                                <p><strong>Arrival:</strong> {{ bus.arrival_time|time:"H:i" }}</p>
+                                                <p><strong>Duration:</strong> {{ bus.duration }}</p>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <h6 class="fw-bold">Amenities</h6>
+                                        <div class="amenities">
+                                            {% if bus.has_wifi %}
+                                            <span class="amenity-tag me-2 mb-2">
+                                                <i class="fas fa-wifi"></i> WiFi
+                                            </span>
+                                            {% endif %}
+                                            {% if bus.has_ac %}
+                                            <span class="amenity-tag me-2 mb-2">
+                                                <i class="fas fa-snowflake"></i> AC
+                                            </span>
+                                            {% endif %}
+                                            {% if bus.has_charging %}
+                                            <span class="amenity-tag me-2 mb-2">
+                                                <i class="fas fa-charging-station"></i> Charging
+                                            </span>
+                                            {% endif %}
+                                            {% if bus.has_entertainment %}
+                                            <span class="amenity-tag me-2 mb-2">
+                                                <i class="fas fa-tv"></i> Entertainment
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <a href="{% url 'seat_selection' bus.id %}?from_city={{ search_params.from_city }}&to_city={{ search_params.to_city }}&travel_date={{ search_params.travel_date }}" 
+                                           class="btn btn-primary">Select Seats</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bus text-muted mb-3" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted">No buses found</h5>
+                            <p class="text-muted">Try adjusting your search criteria or filters</p>
+                            <a href="{% url 'home' %}" class="btn btn-primary">Search Again</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modify Search Modal -->
+    <div class="modal fade" id="modifySearchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modify Search</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="GET" action="{% url 'bus_listing' %}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">From</label>
+                                <select name="from_city" class="form-select" required>
+                                    <option value="">Select departure</option>
+                                    <option value="Douala" {% if search_params.from_city == 'Douala' %}selected{% endif %}>Douala</option>
+                                    <option value="Bamenda" {% if search_params.from_city == 'Bamenda' %}selected{% endif %}>Bamenda</option>
+                                    <option value="Buea" {% if search_params.from_city == 'Buea' %}selected{% endif %}>Buea</option>
+                                    <option value="Limbe" {% if search_params.from_city == 'Limbe' %}selected{% endif %}>Limbe</option>
+                                    <option value="Maroua" {% if search_params.from_city == 'Maroua' %}selected{% endif %}>Maroua</option>
+                                    <option value="Far North" {% if search_params.from_city == 'Far North' %}selected{% endif %}>Far North</option>
+                                    <option value="Littoral" {% if search_params.from_city == 'Littoral' %}selected{% endif %}>Littoral</option>
+                                    <option value="Garoua" {% if search_params.from_city == 'Garoua' %}selected{% endif %}>Garoua</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">To</label>
+                                <select name="to_city" class="form-select" required>
+                                    <option value="">Select destination</option>
+                                    <option value="Douala" {% if search_params.to_city == 'Douala' %}selected{% endif %}>Douala</option>
+                                    <option value="Bamenda" {% if search_params.to_city == 'Bamenda' %}selected{% endif %}>Bamenda</option>
+                                    <option value="Buea" {% if search_params.to_city == 'Buea' %}selected{% endif %}>Buea</option>
+                                    <option value="Limbe" {% if search_params.to_city == 'Limbe' %}selected{% endif %}>Limbe</option>
+                                    <option value="Maroua" {% if search_params.to_city == 'Maroua' %}selected{% endif %}>Maroua</option>
+                                    <option value="Far North" {% if search_params.to_city == 'Far North' %}selected{% endif %}>Far North</option>
+                                    <option value="Littoral" {% if search_params.to_city == 'Littoral' %}selected{% endif %}>Littoral</option>
+                                    <option value="Garoua" {% if search_params.to_city == 'Garoua' %}selected{% endif %}>Garoua</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Departure Date</label>
+                                <input type="date" name="travel_date" class="form-control" 
+                                       value="{{ search_params.travel_date|date:'Y-m-d' }}" 
+                                       min="{{ today|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Passengers</label>
+                                <select name="passengers" class="form-select">
+                                    <option value="1" {% if search_params.passengers == '1' %}selected{% endif %}>1 Passenger</option>
+                                    <option value="2" {% if search_params.passengers == '2' %}selected{% endif %}>2 Passengers</option>
+                                    <option value="3" {% if search_params.passengers == '3' %}selected{% endif %}>3 Passengers</option>
+                                    <option value="4" {% if search_params.passengers == '4' %}selected{% endif %}>4 Passengers</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Update Search</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block js %}
+<!-- <script src="{% static 'assets\js\bus-listing.js' %}"></script> -->
+{% endblock js %}

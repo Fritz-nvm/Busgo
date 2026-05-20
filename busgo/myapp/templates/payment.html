@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+       <!-- Payment Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="text-center mb-5">
+                        <h2 class="fw-bold text-dark mb-3">Complete Your Payment</h2>
+                        <p class="lead text-muted">Choose your preferred payment method</p>
+                    </div>
+                    
+                    <!-- Payment Summary -->
+                    <div class="payment-summary-card bg-white rounded-4 shadow-sm p-4 mb-4">
+                        <h5 class="fw-bold mb-3">Payment Summary</h5>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Base Fare ({{ selected_seats|length }} seat{{ selected_seats|length|pluralize }}):</span>
+                                    <span>{{ base_fare|floatformat:0 }} FCFA</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Taxes & Fees:</span>
+                                    <span>{{ taxes_fees|floatformat:0 }} FCFA</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Processing Fee:</span>
+                                    <span>{{ processing_fee|floatformat:0 }} FCFA</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold h5">
+                                    <span>Total Amount:</span>
+                                    <span class="text-primary">{{ final_total|floatformat:0 }} FCFA</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="journey-info">
+                                    <p class="mb-1"><strong>{{ booking_data.from_city }} → {{ booking_data.to_city }}</strong></p>
+                                    <p class="mb-1 text-muted">{{ booking_data.travel_date|date:"M d, Y" }}</p>
+                                    <p class="mb-0 text-muted">Seats: {{ selected_seats_display }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Methods -->
+                    <div class="payment-methods bg-white rounded-4 shadow-sm p-4 mb-4">
+                        <h5 class="fw-bold mb-4">Payment Methods</h5>
+                        
+                        <form method="POST" action="{% url 'process_payment' %}">
+                            {% csrf_token %}
+                            <!-- Hidden fields to preserve booking data -->
+                            {% for key, value in booking_data.items %}
+                                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endfor %}
+                            <input type="hidden" name="passengers_data" value="{{ passengers_json }}">
+                            <input type="hidden" name="final_total" value="{{ final_total }}">
+                            
+                            <!-- Mobile Money Options -->
+                            <div class="payment-options mb-4">
+                                <div class="payment-option mb-3">
+                                    <input type="radio" class="btn-check" name="payment_method" id="mtn" value="mtn" checked>
+                                    <label class="btn btn-outline-primary w-100 p-3" for="mtn">
+                                        <div class="d-flex align-items-center">
+                                            <div class="payment-icon me-3">
+                                                <i class="fas fa-mobile-alt text-warning" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <div class="text-start">
+                                                <h6 class="mb-1 fw-bold">MTN Mobile Money</h6>
+                                                <small class="text-muted">Pay with your MTN Mobile Money account</small>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="payment-option mb-3">
+                                    <input type="radio" class="btn-check" name="payment_method" id="orange" value="orange">
+                                    <label class="btn btn-outline-primary w-100 p-3" for="orange">
+                                        <div class="d-flex align-items-center">
+                                            <div class="payment-icon me-3">
+                                                <i class="fas fa-mobile-alt text-orange" style="font-size: 2rem;"></i>
+                                            </div>
+                                            <div class="text-start">
+                                                <h6 class="mb-1 fw-bold">Orange Money</h6>
+                                                <small class="text-muted">Pay with your Orange Money account</small>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Details -->
+                            <div class="payment-details mb-4">
+                                <h6 class="fw-semibold mb-3">Payment Details</h6>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Phone Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+237</span>
+                                        <input type="tel" name="payment_phone" class="form-control" 
+                                               placeholder="6XX XXX XXX" required>
+                                    </div>
+                                    <div class="form-text">Enter your mobile money phone number</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="payment-actions">
+                                <button type="submit" class="btn btn-primary w-100 btn-lg">
+                                    <i class="fas fa-credit-card me-2"></i>Pay {{ final_total|floatformat:0 }} FCFA
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Security Notice -->
+                    <div class="security-notice bg-light rounded-4 p-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-shield-alt text-success me-3 mt-1"></i>
+                            <div>
+                                <h6 class="fw-bold mb-2">Secure Payment</h6>
+                                <p class="text-muted mb-0">Your payment is secured with 256-bit SSL encryption. We never store your mobile money PIN or personal financial information.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+{% endblock content %}
+
+{% block js%}
+
+    <!-- <script src="assets/js/payment.js"></script> -->
+
+{% endblock js%}
